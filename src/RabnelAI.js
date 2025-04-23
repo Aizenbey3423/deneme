@@ -18,7 +18,7 @@ export default function RabnelAI() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `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`, // Gerçek anahtarı dışarıda tut!
+          Authorization: `Bearer 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`, // Gerçek anahtarı dışarıda tut!
         },
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
