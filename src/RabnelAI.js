@@ -5,37 +5,46 @@ export default function RabnelAI() {
     { sender: "bot", text: "Merhaba! Rabnel AI'ye hoş geldin. Sana nasıl yardımcı olabilirim?" },
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setLoading(true);
 
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer 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`, // Gerçek anahtarı dışarıda tut!
+          Authorization: `Bearer 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`,
         },
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
           messages: [
             { role: "system", content: "You are RabnelAI, a helpful assistant." },
-            ...messages.map((msg) => ({ role: msg.sender === "user" ? "user" : "assistant", content: msg.text })),
+            ...messages.map((msg) => ({
+              role: msg.sender === "user" ? "user" : "assistant",
+              content: msg.text,
+            })),
             { role: "user", content: input },
           ],
         }),
       });
 
-      const data = await res.json();
-      const botReply = data.choices[0].message.content;
+      if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
 
+      const data = await res.json();
+      const botReply = data?.choices?.[0]?.message?.content || "Cevap alınamadı.";
       setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
     } catch (err) {
+      console.error("API Hatası:", err);
       setMessages((prev) => [...prev, { sender: "bot", text: "Üzgünüm, bir hata oluştu." }]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +56,9 @@ export default function RabnelAI() {
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`p-2 rounded-xl max-w-xs ${msg.sender === "user" ? "bg-blue-100 self-end" : "bg-gray-200 self-start"}`}
+              className={`p-2 rounded-xl max-w-xs whitespace-pre-wrap ${
+                msg.sender === "user" ? "bg-blue-100 self-end" : "bg-gray-200 self-start"
+              }`}
             >
               {msg.text}
             </div>
@@ -60,12 +71,16 @@ export default function RabnelAI() {
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             className="flex-1 p-2 rounded-xl border border-gray-300"
             placeholder="Mesaj yaz..."
+            disabled={loading}
           />
           <button
             onClick={sendMessage}
-            className="bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600"
+            className={`px-4 py-2 rounded-xl text-white ${
+              loading ? "bg-gray-400" : "bg-blue-500 hover:bg-blue-600"
+            }`}
+            disabled={loading}
           >
-            Gönder
+            {loading ? "..." : "Gönder"}
           </button>
         </div>
       </div>
